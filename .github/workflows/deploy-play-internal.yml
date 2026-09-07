@@ -1,0 +1,164 @@
+name: Prepare or Deploy Google Play Internal
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: Public version name shown to testers
+        required: true
+        type: string
+        default: 1.0.0
+      version_code:
+        description: Monotonically increasing Google Play version code
+        required: true
+        type: string
+        default: "3"
+      upload_to_play:
+        description: Upload the signed AAB to the Google Play internal track
+        required: true
+        type: boolean
+        default: false
+      release_status:
+        description: Keep as draft until the release is ready for internal testers
+        required: true
+        type: choice
+        default: draft
+        options:
+          - draft
+          - completed
+      release_notes:
+        description: English (United States) internal release notes
+        required: false
+        default: Initial internal test release of CarHero.
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: google-play-internal
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build signed AAB and optionally upload internally
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate mocks and serialization code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Test
+        run: flutter test
+
+      - name: Validate release signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          missing=()
+          for name in KEYSTORE_BASE64 KEY_ALIAS KEY_PASSWORD STORE_PASSWORD; do
+            if [ -z "${!name:-}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -ne 0 ]; then
+            echo "Missing required signing secrets: ${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          printf '%s\n' \
+            "storePassword=$STORE_PASSWORD" \
+            "keyPassword=$KEY_PASSWORD" \
+            "keyAlias=$KEY_ALIAS" \
+            "storeFile=upload-keystore.jks" \
+            > android/key.properties
+
+      - name: Validate Play version
+        id: version
+        env:
+          VERSION_NAME: ${{ inputs.version_name }}
+          VERSION_CODE: ${{ inputs.version_code }}
+        run: |
+          if ! printf '%s' "$VERSION_NAME" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Version name must use semantic versioning, for example 1.0.0" >&2
+            exit 1
+          fi
+          if ! printf '%s' "$VERSION_CODE" | grep -Eq '^[1-9][0-9]*$'; then
+            echo "Version code must be a positive integer" >&2
+            exit 1
+          fi
+          if [ "$VERSION_CODE" -gt 2100000000 ]; then
+            echo "Version code exceeds Google Play's limit" >&2
+            exit 1
+          fi
+          echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Build signed App Bundle
+        env:
+          CARHERO_REQUIRE_RELEASE_SIGNING: "true"
+        run: flutter build appbundle --release --build-name=${{ steps.version.outputs.name }} --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://carhero.chat/api/v1
+
+      - name: Verify AAB signature
+        run: |
+          jarsigner -verify build/app/outputs/bundle/release/app-release.aab | tee /tmp/aab-signature.txt
+          grep -q '^jar verified\.$' /tmp/aab-signature.txt
+
+      - name: Write release notes
+        env:
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: printf '%s\n' "$RELEASE_NOTES" > distribution/whatsnew/whatsnew-en-US
+
+      - name: Upload signed AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: play-internal-aab-${{ steps.version.outputs.code }}
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Authenticate to Google Cloud without a JSON key
+        id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+        with:
+          project_id: carhero-mobile
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_PLAY_SERVICE_ACCOUNT }}
+
+      - name: Upload to Google Play internal track
+        if: inputs.upload_to_play
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5
+        with:
+          serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
+          packageName: chat.carhero.carhero
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          tracks: internal
+          status: ${{ inputs.release_status }}
+          releaseName: CarHero ${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})
+          whatsNewDirectory: distribution/whatsnew
