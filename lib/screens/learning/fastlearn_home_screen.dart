@@ -3,15 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:carhero/config/theme.dart';
+import 'package:carhero/config/web_handoff.dart';
 import 'package:carhero/models/learning.dart';
 import 'package:carhero/providers/learning_provider.dart';
 import 'package:carhero/providers/locale_provider.dart';
 import 'package:carhero/screens/learning/course_screen.dart';
 
-const _fastLearnUrl = 'https://fastlearn.fun';
-
-Future<void> _openWeb(String path) async {
-  final uri = Uri.parse('$_fastLearnUrl$path');
+Future<void> _openWeb(String path, {bool returnToMobile = false}) async {
+  final uri = fastLearnWebUri(path, returnToMobile: returnToMobile);
   if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
     throw StateError('Could not open $uri');
   }
@@ -179,7 +178,7 @@ class _WelcomeCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           FilledButton.icon(
-            onPressed: () => _openWeb('/auth/login'),
+            onPressed: () => _openWeb('/auth/login', returnToMobile: true),
             icon: const Icon(Icons.login, size: 18),
             label: const Text('Sign in to FastLearn'),
           ),
@@ -322,7 +321,7 @@ class _ProgressPage extends ConsumerWidget {
           ),
           const SizedBox(height: 18),
           FilledButton(
-            onPressed: () => _openWeb('/auth/login'),
+            onPressed: () => _openWeb('/auth/login', returnToMobile: true),
             child: const Text('Open my FastLearn account'),
           ),
         ],
@@ -393,7 +392,7 @@ class _MorePage extends StatelessWidget {
       const ListTile(
         contentPadding: EdgeInsets.zero,
         title: Text('FastLearn Mobile'),
-        subtitle: Text('Early access 0.1.0'),
+        subtitle: Text('Early access 0.1.1'),
         leading: Icon(Icons.school_outlined),
       ),
       const Divider(),
