@@ -7,12 +7,12 @@ on:
         description: Public version name shown to testers
         required: true
         type: string
-        default: 1.0.0
+        default: 0.1.0
       version_code:
         description: Monotonically increasing Google Play version code
         required: true
         type: string
-        default: "3"
+        default: "1"
       upload_to_play:
         description: Upload the signed AAB to the Google Play internal track
         required: true
@@ -29,7 +29,7 @@ on:
       release_notes:
         description: English (United States) internal release notes
         required: false
-        default: Initial internal test release of CarHero.
+        default: Initial internal test release of FastLearn Mobile.
 
 permissions:
   contents: read
@@ -123,8 +123,8 @@ jobs:
 
       - name: Build signed App Bundle
         env:
-          CARHERO_REQUIRE_RELEASE_SIGNING: "true"
-        run: flutter build appbundle --release --build-name=${{ steps.version.outputs.name }} --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://carhero.chat/api/v1
+          FASTLEARN_REQUIRE_RELEASE_SIGNING: "true"
+        run: flutter build appbundle --release --build-name=${{ steps.version.outputs.name }} --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://fastlearn.fun/api/v1
 
       - name: Verify AAB signature
         run: |
@@ -144,10 +144,11 @@ jobs:
           retention-days: 30
 
       - name: Authenticate to Google Cloud without a JSON key
+        if: inputs.upload_to_play
         id: auth
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
         with:
-          project_id: carhero-mobile
+          project_id: ${{ vars.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_PLAY_SERVICE_ACCOUNT }}
 
@@ -156,9 +157,9 @@ jobs:
         uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5
         with:
           serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
-          packageName: chat.carhero.carhero
+          packageName: fun.fastlearn.app
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
           tracks: internal
           status: ${{ inputs.release_status }}
-          releaseName: CarHero ${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})
+          releaseName: FastLearn ${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})
           whatsNewDirectory: distribution/whatsnew

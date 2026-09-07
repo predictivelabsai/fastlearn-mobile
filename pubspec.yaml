@@ -1,6 +1,6 @@
 name: carhero
-description: AI-powered European premium car marketplace
-version: 1.0.0+3
+description: Mobile learning companion for FastLearn and FastLMS
+version: 0.1.0+1
 publish_to: none
 
 environment:
@@ -67,7 +67,7 @@ flutter_launcher_icons:
   android: true
   ios: false
   image_path: "assets/images/app_icon.png"
-  adaptive_icon_background: "#1A1A1A"
+  adaptive_icon_background: "#256B62"
   adaptive_icon_foreground: "assets/images/app_icon_foreground.png"
 
 flutter:

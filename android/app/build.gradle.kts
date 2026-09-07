@@ -4,7 +4,6 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services")
 }
 
 val keystorePropertiesFile = rootProject.file("key.properties")
@@ -14,7 +13,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 val requireReleaseSigning =
-    providers.environmentVariable("CARHERO_REQUIRE_RELEASE_SIGNING").orNull == "true"
+    providers.environmentVariable("FASTLEARN_REQUIRE_RELEASE_SIGNING").orNull == "true"
 val requiredSigningProperties = listOf("storePassword", "keyPassword", "keyAlias", "storeFile")
 val missingSigningProperties =
     requiredSigningProperties.filter { keystoreProperties.getProperty(it).isNullOrBlank() }
@@ -32,7 +31,7 @@ if (requireReleaseSigning && !keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "chat.carhero.carhero"
+    namespace = "fun.fastlearn.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -42,7 +41,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "chat.carhero.carhero"
+        applicationId = "fun.fastlearn.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

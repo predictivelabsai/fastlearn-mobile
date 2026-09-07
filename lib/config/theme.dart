@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const _ink = Color(0xFF1A1A1A);
+  static const _ink = Color(0xFF172321);
   static const _white = Color(0xFFFFFFFF);
   static const _gray50 = Color(0xFFF9FAFB);
   static const _gray100 = Color(0xFFF3F4F6);
@@ -11,6 +11,10 @@ class AppTheme {
   static const _green600 = Color(0xFF16A34A);
   static const _red600 = Color(0xFFDC2626);
   static const _blue600 = Color(0xFF2563EB);
+  static const _accent = Color(0xFF256B62);
+  static const _accentStrong = Color(0xFF174F49);
+  static const _tint = Color(0xFFF1F8F6);
+  static const _sun = Color(0xFFF2C94C);
 
   static Color get ink => _ink;
   static Color get gray50 => _gray50;
@@ -21,12 +25,16 @@ class AppTheme {
   static Color get green600 => _green600;
   static Color get red600 => _red600;
   static Color get blue600 => _blue600;
+  static Color get accent => _accent;
+  static Color get accentStrong => _accentStrong;
+  static Color get tint => _tint;
+  static Color get sun => _sun;
 
   static ThemeData get light => ThemeData(
     useMaterial3: true,
     fontFamily: 'Inter',
     colorScheme: ColorScheme.light(
-      primary: _ink,
+      primary: _accent,
       onPrimary: _white,
       surface: _white,
       onSurface: _ink,
@@ -59,13 +67,13 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: _ink, width: 1.5),
+        borderSide: const BorderSide(color: _accent, width: 1.5),
       ),
       hintStyle: const TextStyle(color: _gray400, fontSize: 14),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: _ink,
+        backgroundColor: _accent,
         foregroundColor: _white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -78,7 +86,7 @@ class AppTheme {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: _ink,
+        foregroundColor: _accent,
         textStyle: const TextStyle(
           fontFamily: 'Inter',
           fontWeight: FontWeight.w600,
@@ -88,7 +96,7 @@ class AppTheme {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: _white,
-      selectedColor: _ink,
+      selectedColor: _accent,
       labelStyle: const TextStyle(fontSize: 13),
       side: const BorderSide(color: _gray200),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -96,7 +104,7 @@ class AppTheme {
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: _white,
-      selectedItemColor: _ink,
+      selectedItemColor: _accent,
       unselectedItemColor: _gray400,
       type: BottomNavigationBarType.fixed,
       elevation: 8,

@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: [main]
@@ -119,13 +122,13 @@ jobs:
 
       - name: Build APK
         env:
-          CARHERO_REQUIRE_RELEASE_SIGNING: "true"
-        run: flutter build apk --release --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://carhero.chat/api/v1
+          FASTLEARN_REQUIRE_RELEASE_SIGNING: "true"
+        run: flutter build apk --release --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://fastlearn.fun/api/v1
 
       - name: Build App Bundle
         env:
-          CARHERO_REQUIRE_RELEASE_SIGNING: "true"
-        run: flutter build appbundle --release --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://carhero.chat/api/v1
+          FASTLEARN_REQUIRE_RELEASE_SIGNING: "true"
+        run: flutter build appbundle --release --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://fastlearn.fun/api/v1
 
       - name: Verify release signatures
         run: |
@@ -148,13 +151,20 @@ jobs:
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
 
-      - name: Distribute to Firebase App Distribution
-        uses: wzieba/Firebase-Distribution-Github-Action@v1
+      - name: Name public tester APK
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk fastlearn-mobile-latest.apk
+          sha256sum fastlearn-mobile-latest.apk > fastlearn-mobile-latest.apk.sha256
+
+      - name: Publish tester APK
+        uses: softprops/action-gh-release@v2
         with:
-          appId: ${{ secrets.FIREBASE_APP_ID }}
-          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          groups: testers
-          file: build/app/outputs/flutter-apk/app-release.apk
-          releaseNotes: |
-            Build from commit ${{ github.sha }}
-            ${{ github.event.head_commit.message }}
+          tag_name: android-v0.1.${{ github.run_number }}
+          name: FastLearn Mobile v0.1.${{ github.run_number }}
+          body: |
+            Early-access Android build from `${{ github.sha }}`.
+            Download `fastlearn-mobile-latest.apk` below and allow installation from your browser when Android asks.
+          files: |
+            fastlearn-mobile-latest.apk
+            fastlearn-mobile-latest.apk.sha256
+          make_latest: true

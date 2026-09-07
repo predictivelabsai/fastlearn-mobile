@@ -4,5 +4,5 @@ import 'package:carhero/app.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: CarHeroApp()));
+  runApp(const ProviderScope(child: FastLearnApp()));
 }

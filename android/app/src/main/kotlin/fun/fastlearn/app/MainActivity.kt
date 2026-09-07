@@ -1,4 +1,4 @@
-package chat.carhero.carhero
+package `fun`.fastlearn.app
 
 import io.flutter.embedding.android.FlutterActivity
 

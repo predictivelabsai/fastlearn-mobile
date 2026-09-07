@@ -1,4 +1,7 @@
-name: Deploy Android
+name: Publish Android tester build
+
+permissions:
+  contents: write
 
 on:
   workflow_dispatch:
@@ -14,7 +17,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build signed release & deploy to Firebase
+    name: Build signed release & publish APK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,13 +84,13 @@ jobs:
 
       - name: Build release APK
         env:
-          CARHERO_REQUIRE_RELEASE_SIGNING: "true"
-        run: flutter build apk --release --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://carhero.chat/api/v1
+          FASTLEARN_REQUIRE_RELEASE_SIGNING: "true"
+        run: flutter build apk --release --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://fastlearn.fun/api/v1
 
       - name: Build release App Bundle
         env:
-          CARHERO_REQUIRE_RELEASE_SIGNING: "true"
-        run: flutter build appbundle --release --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://carhero.chat/api/v1
+          FASTLEARN_REQUIRE_RELEASE_SIGNING: "true"
+        run: flutter build appbundle --release --build-number=${{ steps.version.outputs.code }} --dart-define=API_BASE_URL=https://fastlearn.fun/api/v1
 
       - name: Verify release signatures
         run: |
@@ -110,11 +113,18 @@ jobs:
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
 
-      - name: Deploy to Firebase App Distribution
-        uses: wzieba/Firebase-Distribution-Github-Action@v1
+      - name: Name public tester APK
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk fastlearn-mobile-latest.apk
+          sha256sum fastlearn-mobile-latest.apk > fastlearn-mobile-latest.apk.sha256
+
+      - name: Publish tester APK
+        uses: softprops/action-gh-release@v2
         with:
-          appId: ${{ secrets.FIREBASE_APP_ID }}
-          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          groups: testers
-          file: build/app/outputs/flutter-apk/app-release.apk
-          releaseNotes: ${{ github.event.inputs.release_notes }}
+          tag_name: android-v0.1.${{ github.run_number }}-manual
+          name: FastLearn Mobile v0.1.${{ github.run_number }} manual build
+          body: ${{ github.event.inputs.release_notes }}
+          files: |
+            fastlearn-mobile-latest.apk
+            fastlearn-mobile-latest.apk.sha256
+          make_latest: true
