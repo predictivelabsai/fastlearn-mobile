@@ -120,6 +120,16 @@ jobs:
           fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
 
+      - name: Read app release version
+        id: app_version
+        run: |
+          name=$(awk '/^version:/ { split($2, parts, "+"); print parts[1] }' pubspec.yaml)
+          if [ -z "$name" ]; then
+            echo "Could not read version from pubspec.yaml" >&2
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
       - name: Build APK
         env:
           FASTLEARN_REQUIRE_RELEASE_SIGNING: "true"
@@ -159,8 +169,8 @@ jobs:
       - name: Publish tester APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-v0.1.${{ github.run_number }}
-          name: FastLearn Mobile v0.1.${{ github.run_number }}
+          tag_name: android-v${{ steps.app_version.outputs.name }}
+          name: FastLearn Mobile v${{ steps.app_version.outputs.name }}
           body: |
             Early-access Android build from `${{ github.sha }}`.
             Download `fastlearn-mobile-latest.apk` below and allow installation from your browser when Android asks.
