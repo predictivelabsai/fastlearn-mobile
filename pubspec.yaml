@@ -1,6 +1,6 @@
 name: carhero
 description: Mobile learning companion for FastLearn and FastLMS
-version: 0.1.1+2
+version: 0.1.4+4
 publish_to: none
 
 environment:

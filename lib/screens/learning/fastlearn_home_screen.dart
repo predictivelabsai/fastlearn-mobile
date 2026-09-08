@@ -348,7 +348,13 @@ class _TutorPage extends StatelessWidget {
         child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.auto_awesome, color: Colors.white, size: 36),
+            Row(
+              children: [
+                _SonogramIcon(color: Colors.white),
+                SizedBox(width: 12),
+                Icon(Icons.mic_none_rounded, color: Colors.white, size: 28),
+              ],
+            ),
             SizedBox(height: 18),
             Text(
               'Ask your AI tutor',
@@ -368,18 +374,61 @@ class _TutorPage extends StatelessWidget {
       ),
       const SizedBox(height: 22),
       FilledButton.icon(
+        onPressed: () => _openWeb('/app/chat?voice=1'),
+        icon: const _SonogramIcon(color: Colors.white, compact: true),
+        label: const Text('Open voice tutor'),
+      ),
+      const SizedBox(height: 10),
+      OutlinedButton.icon(
         onPressed: () => _openWeb('/app/chat'),
-        icon: const Icon(Icons.open_in_new),
-        label: const Text('Open AI tutor'),
+        icon: const Icon(Icons.keyboard_alt_outlined),
+        label: const Text('Type with AI tutor'),
       ),
       const SizedBox(height: 10),
       Text(
-        'The secure tutor opens on fastlearn.fun and asks you to sign in if needed.',
+        'The secure xAI voice tutor opens on fastlearn.fun, then asks for microphone access. Sign in if needed.',
         textAlign: TextAlign.center,
         style: TextStyle(color: AppTheme.gray500, fontSize: 12),
       ),
     ],
   );
+}
+
+class _SonogramIcon extends StatelessWidget {
+  final Color color;
+  final bool compact;
+
+  const _SonogramIcon({required this.color, this.compact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final heights = compact
+        ? const <double>[8, 14, 20, 13, 7]
+        : const <double>[12, 23, 34, 21, 10];
+    return Semantics(
+      label: 'Voice waveform',
+      child: SizedBox(
+        key: const Key('voice-sonogram'),
+        width: compact ? 27 : 43,
+        height: compact ? 22 : 36,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            for (final height in heights)
+              Container(
+                width: compact ? 3 : 5,
+                height: height,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _MorePage extends StatelessWidget {
@@ -392,7 +441,7 @@ class _MorePage extends StatelessWidget {
       const ListTile(
         contentPadding: EdgeInsets.zero,
         title: Text('FastLearn Mobile'),
-        subtitle: Text('Early access 0.1.1'),
+        subtitle: Text('Early access 0.1.4'),
         leading: Icon(Icons.school_outlined),
       ),
       const Divider(),

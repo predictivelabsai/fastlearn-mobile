@@ -54,5 +54,13 @@ void main() {
     );
     expect(find.text('Learning'), findsOneWidget);
     expect(find.text('Tutor'), findsOneWidget);
+
+    await tester.tap(find.text('Tutor'));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Open voice tutor'), findsOneWidget);
+    expect(find.text('Type with AI tutor'), findsOneWidget);
+    expect(find.byKey(const Key('voice-sonogram')), findsNWidgets(2));
+    expect(find.byIcon(Icons.mic_none_rounded), findsOneWidget);
   });
 }
