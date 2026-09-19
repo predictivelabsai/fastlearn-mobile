@@ -17,10 +17,7 @@ class FastLearnApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       locale: Locale(localeCode),
-      supportedLocales: const [
-        Locale('en'),
-        Locale('et'),
-      ],
+      supportedLocales: const [Locale('en'), Locale('et')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
