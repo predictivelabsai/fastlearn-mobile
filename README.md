@@ -5,13 +5,15 @@ Early-access Flutter companion for [FastLearn](https://fastlearn.fun), powered b
 ## Current mobile experience
 
 - Browse the live multilingual FastLearn course catalogue.
-- Open a course curriculum and read Markdown lessons natively.
+- Open a course curriculum, read Markdown lessons, and complete guided exercises natively.
+- View lesson charts with native Flutter bar, line, and pie visualizations; every visual retains an accessible data table.
+- Open every authenticated FastLearn workspace from the app: dashboard, courses, language learning, leaderboard, profile, teacher tools, and school administration.
 - Track completed lessons locally on the device.
 - Sign in securely in the browser and return automatically to the Android app after Google SSO.
 - Open the contextual AI tutor in the authenticated browser session.
-- Switch course content between English, Estonian, Lithuanian, and Spanish.
+- Switch course content between English and Estonian. Additional reviewed translations will follow after the science pathway stabilises.
 
-The app intentionally does not embed the FastLMS server-to-server integration token. Account progress, quizzes, XP, streaks, and tutor history remain on the secure FastLearn web experience until user-scoped mobile authentication is available.
+The app intentionally does not embed the FastLMS server-to-server integration token. Secure account progress, quizzes, XP, streaks, tutor history, teaching, and school administration open in the authenticated FastLearn web workspace until user-scoped mobile authentication is available.
 
 ## Run locally
 
@@ -47,6 +49,7 @@ Every versioned release also includes `fastlearn-mobile-latest.apk.sha256`; Andr
 - Flutter 3.44 / Dart 3.12
 - Riverpod for API and local progress state
 - Dio for the public FastLMS API
+- `fl_chart` for a native, accessible subset of FastLMS lesson visualizations
 - Shared Preferences for on-device lesson completion
 - `flutter_markdown` for native lesson rendering
 - `url_launcher` and the `fastlearn://auth/complete` Android deep link for secure web account handoff

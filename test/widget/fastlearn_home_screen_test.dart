@@ -26,6 +26,22 @@ class _FakeLearningService implements LearningService {
     int courseId, {
     String language = 'en',
   }) async => throw UnimplementedError();
+
+  @override
+  Future<LessonActivities> fetchLessonActivities(
+    int lessonId, {
+    String language = 'en',
+  }) async => const LessonActivities(exercises: [], visualizations: []);
+
+  @override
+  Future<ExerciseCheckResult> checkExercise(
+    int exerciseId,
+    Map<String, dynamic> answer,
+  ) async => const ExerciseCheckResult(
+    correct: false,
+    completed: false,
+    optimal: false,
+  );
 }
 
 void main() {
@@ -62,5 +78,17 @@ void main() {
     expect(find.text('Type with AI tutor'), findsOneWidget);
     expect(find.byKey(const Key('voice-sonogram')), findsNWidgets(2));
     expect(find.byIcon(Icons.mic_none_rounded), findsOneWidget);
+
+    await tester.tap(find.text('More'));
+    await tester.pump();
+
+    expect(find.text('Dashboard'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Teacher workspace'),
+      220,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('Teacher workspace'), findsOneWidget);
+    expect(find.text('School workspace'), findsOneWidget);
   });
 }

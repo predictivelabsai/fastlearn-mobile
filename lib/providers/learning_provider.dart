@@ -6,7 +6,7 @@ import 'package:carhero/providers/locale_provider.dart';
 import 'package:carhero/services/learning_service.dart';
 
 String _apiLanguage(String locale) =>
-    const {'en', 'et', 'lt', 'es'}.contains(locale) ? locale : 'en';
+    const {'en', 'et'}.contains(locale) ? locale : 'en';
 
 final learningServiceProvider = Provider<LearningService>(
   (ref) => HttpLearningService(),
@@ -25,6 +25,16 @@ final courseCurriculumProvider = FutureProvider.family<CourseCurriculum, int>((
   return ref
       .watch(learningServiceProvider)
       .fetchCurriculum(courseId, language: language);
+});
+
+final lessonActivitiesProvider = FutureProvider.family<LessonActivities, int>((
+  ref,
+  lessonId,
+) {
+  final language = _apiLanguage(ref.watch(localeProvider));
+  return ref
+      .watch(learningServiceProvider)
+      .fetchLessonActivities(lessonId, language: language);
 });
 
 final lessonProgressProvider =

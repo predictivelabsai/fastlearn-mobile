@@ -20,8 +20,6 @@ class FastLearnApp extends ConsumerWidget {
       supportedLocales: const [
         Locale('en'),
         Locale('et'),
-        Locale('lt'),
-        Locale('es'),
       ],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

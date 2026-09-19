@@ -66,8 +66,6 @@ class _FastLearnHomeScreenState extends ConsumerState<FastLearnHomeScreen> {
             itemBuilder: (context) => const [
               PopupMenuItem(value: 'en', child: Text('English')),
               PopupMenuItem(value: 'et', child: Text('Eesti')),
-              PopupMenuItem(value: 'lt', child: Text('Lietuvių')),
-              PopupMenuItem(value: 'es', child: Text('Español')),
             ],
           ),
         ],
@@ -320,9 +318,16 @@ class _ProgressPage extends ConsumerWidget {
             style: TextStyle(color: AppTheme.gray500, height: 1.45),
           ),
           const SizedBox(height: 18),
-          FilledButton(
-            onPressed: () => _openWeb('/auth/login', returnToMobile: true),
-            child: const Text('Open my FastLearn account'),
+          FilledButton.icon(
+            onPressed: () => _openWeb('/app/dashboard'),
+            icon: const Icon(Icons.dashboard_outlined),
+            label: const Text('Open my FastLearn dashboard'),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: () => _openWeb('/app/leaderboard'),
+            icon: const Icon(Icons.emoji_events_outlined),
+            label: const Text('View leaderboard and streaks'),
           ),
         ],
       ),
@@ -441,8 +446,58 @@ class _MorePage extends StatelessWidget {
       const ListTile(
         contentPadding: EdgeInsets.zero,
         title: Text('FastLearn Mobile'),
-        subtitle: Text('Early access 0.1.4'),
+        subtitle: Text('Version 0.2.0 · native learning companion'),
         leading: Icon(Icons.school_outlined),
+      ),
+      const Divider(),
+      const Padding(
+        padding: EdgeInsets.only(top: 8, bottom: 4),
+        child: Text(
+          'Your FastLearn workspace',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
+      const _WebWorkspaceItem(
+        icon: Icons.dashboard_outlined,
+        title: 'Dashboard',
+        subtitle: 'Enrolments, XP and learning record',
+        path: '/app/dashboard',
+      ),
+      const _WebWorkspaceItem(
+        icon: Icons.menu_book_outlined,
+        title: 'My courses',
+        subtitle: 'Course enrolments and secure quizzes',
+        path: '/app/courses',
+      ),
+      const _WebWorkspaceItem(
+        icon: Icons.translate_outlined,
+        title: 'Language learning',
+        subtitle: 'Practice dashboard and preferences',
+        path: '/app/languages',
+      ),
+      const _WebWorkspaceItem(
+        icon: Icons.emoji_events_outlined,
+        title: 'Leaderboard',
+        subtitle: 'XP, levels and learning streaks',
+        path: '/app/leaderboard',
+      ),
+      const _WebWorkspaceItem(
+        icon: Icons.person_outline,
+        title: 'Profile and settings',
+        subtitle: 'Account, privacy and learning preferences',
+        path: '/app/profile',
+      ),
+      const _WebWorkspaceItem(
+        icon: Icons.admin_panel_settings_outlined,
+        title: 'Teacher workspace',
+        subtitle: 'Course management, learners and reports',
+        path: '/app/manage',
+      ),
+      const _WebWorkspaceItem(
+        icon: Icons.account_balance_outlined,
+        title: 'School workspace',
+        subtitle: 'Programmes, attendance, gradebook and fees',
+        path: '/app/school',
       ),
       const Divider(),
       ListTile(
@@ -465,6 +520,30 @@ class _MorePage extends StatelessWidget {
         style: TextStyle(color: AppTheme.gray500),
       ),
     ],
+  );
+}
+
+class _WebWorkspaceItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String path;
+
+  const _WebWorkspaceItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.path,
+  });
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: EdgeInsets.zero,
+    leading: Icon(icon),
+    title: Text(title),
+    subtitle: Text(subtitle),
+    trailing: const Icon(Icons.open_in_new, size: 18),
+    onTap: () => _openWeb(path),
   );
 }
 

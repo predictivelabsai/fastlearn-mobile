@@ -10,6 +10,16 @@ abstract class LearningService {
     int courseId, {
     String language = 'en',
   });
+
+  Future<LessonActivities> fetchLessonActivities(
+    int lessonId, {
+    String language = 'en',
+  });
+
+  Future<ExerciseCheckResult> checkExercise(
+    int exerciseId,
+    Map<String, dynamic> answer,
+  );
 }
 
 class HttpLearningService implements LearningService {
@@ -49,5 +59,29 @@ class HttpLearningService implements LearningService {
       queryParameters: {'lang': language},
     );
     return CourseCurriculum.fromJson(response.data!);
+  }
+
+  @override
+  Future<LessonActivities> fetchLessonActivities(
+    int lessonId, {
+    String language = 'en',
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/lessons/$lessonId/guided-content',
+      queryParameters: {'lang': language},
+    );
+    return LessonActivities.fromJson(response.data!);
+  }
+
+  @override
+  Future<ExerciseCheckResult> checkExercise(
+    int exerciseId,
+    Map<String, dynamic> answer,
+  ) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/exercises/$exerciseId/check',
+      data: {'answer': answer},
+    );
+    return ExerciseCheckResult.fromJson(response.data!);
   }
 }

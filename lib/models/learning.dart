@@ -39,6 +39,7 @@ class Lesson {
   final int xpReward;
   final int order;
   final int exerciseCount;
+  final int visualizationCount;
 
   const Lesson({
     required this.id,
@@ -50,6 +51,7 @@ class Lesson {
     required this.xpReward,
     required this.order,
     required this.exerciseCount,
+    required this.visualizationCount,
     this.videoUrl,
   });
 
@@ -64,6 +66,7 @@ class Lesson {
     xpReward: json['xp_reward'] as int? ?? 0,
     order: json['order_idx'] as int? ?? 0,
     exerciseCount: json['exercise_count'] as int? ?? 0,
+    visualizationCount: json['visualization_count'] as int? ?? 0,
   );
 }
 
@@ -91,6 +94,149 @@ class CourseModule {
         .map((item) => Lesson.fromJson(item as Map<String, dynamic>))
         .toList(),
   );
+}
+
+class GuidedExercise {
+  final int id;
+  final String engine;
+  final String exerciseType;
+  final String prompt;
+  final int difficultyBand;
+  final List<String> choices;
+  final List<String> equation;
+  final String? molecule;
+  final String? scene;
+  final String? atom;
+  final int? massNumber;
+  final int? atomicNumber;
+  final String? unit;
+  final String? chart;
+  final Map<String, String> ui;
+
+  const GuidedExercise({
+    required this.id,
+    required this.engine,
+    required this.exerciseType,
+    required this.prompt,
+    required this.difficultyBand,
+    required this.choices,
+    required this.equation,
+    required this.ui,
+    this.molecule,
+    this.scene,
+    this.atom,
+    this.massNumber,
+    this.atomicNumber,
+    this.unit,
+    this.chart,
+  });
+
+  factory GuidedExercise.fromJson(Map<String, dynamic> json) => GuidedExercise(
+    id: json['id'] as int,
+    engine: json['engine'] as String? ?? '',
+    exerciseType: json['exercise_type'] as String? ?? '',
+    prompt: json['prompt'] as String? ?? '',
+    difficultyBand: json['difficulty_band'] as int? ?? 1,
+    choices: _stringList(json['choices']),
+    equation: _stringList(json['equation']),
+    molecule: json['molecule'] as String?,
+    scene: json['scene'] as String?,
+    atom: json['atom'] as String?,
+    massNumber: json['mass_number'] as int?,
+    atomicNumber: json['atomic_number'] as int?,
+    unit: json['unit'] as String?,
+    chart: json['chart'] as String?,
+    ui: _stringMap(json['ui']),
+  );
+}
+
+class LessonVisualization {
+  final String sourceKey;
+  final String title;
+  final String description;
+  final String altText;
+  final String sourceNote;
+  final List<Map<String, dynamic>> data;
+  final Map<String, dynamic> table;
+
+  const LessonVisualization({
+    required this.sourceKey,
+    required this.title,
+    required this.description,
+    required this.altText,
+    required this.sourceNote,
+    required this.data,
+    required this.table,
+  });
+
+  factory LessonVisualization.fromJson(Map<String, dynamic> json) =>
+      LessonVisualization(
+        sourceKey: json['source_key'] as String? ?? '',
+        title: json['title'] as String? ?? 'Lesson visualization',
+        description: json['description'] as String? ?? '',
+        altText: json['alt_text'] as String? ?? '',
+        sourceNote: json['source_note'] as String? ?? '',
+        data: (json['data'] as List<dynamic>? ?? const [])
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList(),
+        table: Map<String, dynamic>.from(json['table'] as Map? ?? const {}),
+      );
+}
+
+class LessonActivities {
+  final List<GuidedExercise> exercises;
+  final List<LessonVisualization> visualizations;
+
+  const LessonActivities({
+    required this.exercises,
+    required this.visualizations,
+  });
+
+  factory LessonActivities.fromJson(Map<String, dynamic> json) =>
+      LessonActivities(
+        exercises: (json['exercises'] as List<dynamic>? ?? const [])
+            .whereType<Map>()
+            .map(
+              (item) =>
+                  GuidedExercise.fromJson(Map<String, dynamic>.from(item)),
+            )
+            .toList(),
+        visualizations: (json['visualizations'] as List<dynamic>? ?? const [])
+            .whereType<Map>()
+            .map(
+              (item) =>
+                  LessonVisualization.fromJson(Map<String, dynamic>.from(item)),
+            )
+            .toList(),
+      );
+}
+
+class ExerciseCheckResult {
+  final bool correct;
+  final bool completed;
+  final bool optimal;
+
+  const ExerciseCheckResult({
+    required this.correct,
+    required this.completed,
+    required this.optimal,
+  });
+
+  factory ExerciseCheckResult.fromJson(Map<String, dynamic> json) =>
+      ExerciseCheckResult(
+        correct: json['correct'] == true,
+        completed: json['completed'] == true,
+        optimal: json['optimal'] == true,
+      );
+}
+
+List<String> _stringList(Object? value) =>
+    (value as List<dynamic>? ?? const []).whereType<String>().toList();
+
+Map<String, String> _stringMap(Object? value) {
+  if (value is! Map) return const {};
+  return value.map((key, item) => MapEntry('$key', '$item'));
 }
 
 class CourseCurriculum {
