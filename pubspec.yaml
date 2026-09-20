@@ -1,6 +1,6 @@
 name: carhero
 description: Mobile learning companion for FastLearn and FastLMS
-version: 0.2.0+5
+version: 0.2.1+6
 publish_to: none
 
 environment:
@@ -60,8 +60,6 @@ dev_dependencies:
   riverpod_generator: ^4.0.4-dev.3
   mockito: ^5.4.6
   flutter_launcher_icons: ^0.14.3
-  integration_test:
-    sdk: flutter
 
 flutter_launcher_icons:
   android: true

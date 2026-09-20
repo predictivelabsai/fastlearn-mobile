@@ -6,6 +6,10 @@ class Course {
   final String category;
   final String difficulty;
   final String? thumbnailUrl;
+  final String? countryCode;
+  final String? gradeCode;
+  final String? curriculumCode;
+  final String canonicalLanguage;
 
   const Course({
     required this.id,
@@ -15,6 +19,10 @@ class Course {
     required this.category,
     required this.difficulty,
     this.thumbnailUrl,
+    this.countryCode,
+    this.gradeCode,
+    this.curriculumCode,
+    this.canonicalLanguage = 'en',
   });
 
   factory Course.fromJson(Map<String, dynamic> json) => Course(
@@ -25,6 +33,10 @@ class Course {
     category: json['category'] as String? ?? 'Learning',
     difficulty: json['difficulty'] as String? ?? 'beginner',
     thumbnailUrl: json['thumbnail_url'] as String?,
+    countryCode: json['country_code'] as String?,
+    gradeCode: json['grade_code'] as String?,
+    curriculumCode: json['curriculum_code'] as String?,
+    canonicalLanguage: json['canonical_language'] as String? ?? 'en',
   );
 }
 
@@ -40,6 +52,8 @@ class Lesson {
   final int order;
   final int exerciseCount;
   final int visualizationCount;
+  final String lessonKind;
+  final int? prerequisiteLessonId;
 
   const Lesson({
     required this.id,
@@ -52,6 +66,8 @@ class Lesson {
     required this.order,
     required this.exerciseCount,
     required this.visualizationCount,
+    this.lessonKind = 'core',
+    this.prerequisiteLessonId,
     this.videoUrl,
   });
 
@@ -67,6 +83,8 @@ class Lesson {
     order: json['order_idx'] as int? ?? 0,
     exerciseCount: json['exercise_count'] as int? ?? 0,
     visualizationCount: json['visualization_count'] as int? ?? 0,
+    lessonKind: json['lesson_kind'] as String? ?? 'core',
+    prerequisiteLessonId: json['prerequisite_lesson_id'] as int?,
   );
 }
 
@@ -104,6 +122,7 @@ class GuidedExercise {
   final int difficultyBand;
   final List<String> choices;
   final List<String> equation;
+  final List<String> operators;
   final String? molecule;
   final String? scene;
   final String? atom;
@@ -121,6 +140,7 @@ class GuidedExercise {
     required this.difficultyBand,
     required this.choices,
     required this.equation,
+    required this.operators,
     required this.ui,
     this.molecule,
     this.scene,
@@ -139,6 +159,7 @@ class GuidedExercise {
     difficultyBand: json['difficulty_band'] as int? ?? 1,
     choices: _stringList(json['choices']),
     equation: _stringList(json['equation']),
+    operators: _stringList(json['operators']),
     molecule: json['molecule'] as String?,
     scene: json['scene'] as String?,
     atom: json['atom'] as String?,
@@ -216,11 +237,15 @@ class ExerciseCheckResult {
   final bool correct;
   final bool completed;
   final bool optimal;
+  final String correctAnswer;
+  final String explanation;
 
   const ExerciseCheckResult({
     required this.correct,
     required this.completed,
     required this.optimal,
+    this.correctAnswer = '',
+    this.explanation = '',
   });
 
   factory ExerciseCheckResult.fromJson(Map<String, dynamic> json) =>
@@ -228,6 +253,8 @@ class ExerciseCheckResult {
         correct: json['correct'] == true,
         completed: json['completed'] == true,
         optimal: json['optimal'] == true,
+        correctAnswer: json['correct_answer'] as String? ?? '',
+        explanation: json['explanation'] as String? ?? '',
       );
 }
 

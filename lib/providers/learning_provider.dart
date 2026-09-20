@@ -21,26 +21,56 @@ final courseCurriculumProvider = FutureProvider.family<CourseCurriculum, int>((
   ref,
   courseId,
 ) {
-  final language = _apiLanguage(ref.watch(localeProvider));
+  ref.watch(localeProvider);
   return ref
       .watch(learningServiceProvider)
-      .fetchCurriculum(courseId, language: language);
+      .fetchCurriculum(courseId, language: '');
 });
 
 final lessonActivitiesProvider = FutureProvider.family<LessonActivities, int>((
   ref,
   lessonId,
 ) {
-  final language = _apiLanguage(ref.watch(localeProvider));
+  ref.watch(localeProvider);
   return ref
       .watch(learningServiceProvider)
-      .fetchLessonActivities(lessonId, language: language);
+      .fetchLessonActivities(lessonId, language: '');
 });
 
 final lessonProgressProvider =
     AsyncNotifierProvider<LessonProgressNotifier, Set<int>>(
       LessonProgressNotifier.new,
     );
+
+final lessonMasteryProvider =
+    AsyncNotifierProvider<LessonMasteryNotifier, Set<int>>(
+      LessonMasteryNotifier.new,
+    );
+
+class LessonMasteryNotifier extends AsyncNotifier<Set<int>> {
+  static const _storageKey = 'fastlearn.mastered_lessons';
+
+  @override
+  Future<Set<int>> build() async {
+    final preferences = await SharedPreferences.getInstance();
+    return preferences
+            .getStringList(_storageKey)
+            ?.map(int.tryParse)
+            .whereType<int>()
+            .toSet() ??
+        <int>{};
+  }
+
+  Future<void> mark(int lessonId) async {
+    final mastered = {...(state.value ?? <int>{}), lessonId};
+    state = AsyncData(Set.unmodifiable(mastered));
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList(
+      _storageKey,
+      mastered.map((id) => id.toString()).toList()..sort(),
+    );
+  }
+}
 
 class LessonProgressNotifier extends AsyncNotifier<Set<int>> {
   static const _storageKey = 'fastlearn.completed_lessons';

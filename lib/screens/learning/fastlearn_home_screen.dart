@@ -241,6 +241,10 @@ class _CourseCard extends StatelessWidget {
                       children: [
                         _Label(course.category),
                         _Label(_titleCase(course.difficulty)),
+                        if (course.countryCode != null)
+                          _Label(
+                            '${course.countryCode}${course.gradeCode == null ? '' : ' · ${course.gradeCode}'}',
+                          ),
                       ],
                     ),
                   ],

@@ -3,10 +3,18 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:carhero/config/web_handoff.dart';
 import 'package:carhero/config/theme.dart';
 import 'package:carhero/models/learning.dart';
 import 'package:carhero/providers/learning_provider.dart';
 import 'package:carhero/widgets/learning/lesson_visualization.dart';
+
+Future<void> _openLessonChat(int lessonId) async {
+  final uri = fastLearnWebUri('/app/chat/new?lesson_id=$lessonId');
+  if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+    throw StateError('Could not open $uri');
+  }
+}
 
 class CourseScreen extends ConsumerWidget {
   final Course course;
@@ -19,7 +27,9 @@ class CourseScreen extends ConsumerWidget {
     final progress = ref.watch(lessonProgressProvider).value ?? <int>{};
 
     return Scaffold(
-      appBar: AppBar(title: Text(course.title)),
+      appBar: AppBar(
+        title: Text(curriculum.value?.course.title ?? course.title),
+      ),
       body: curriculum.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => Center(
@@ -29,76 +39,120 @@ class CourseScreen extends ConsumerWidget {
             child: const Text('Try again'),
           ),
         ),
-        data: (data) => ListView(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
-          children: [
-            Text(
-              course.description,
-              style: TextStyle(color: AppTheme.gray500, height: 1.45),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _CourseFact(
-                  Icons.layers_outlined,
-                  '${data.modules.length} modules',
-                ),
-                const SizedBox(width: 16),
-                _CourseFact(
-                  Icons.menu_book_outlined,
-                  '${data.lessons.length} lessons',
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            for (final module in data.modules) ...[
+        data: (data) {
+          final lessonsById = {
+            for (final lesson in data.lessons) lesson.id: lesson,
+          };
+          final effectiveCountry = data.course.countryCode?.isEmpty ?? true
+              ? course.countryCode
+              : data.course.countryCode;
+          bool isLocked(Lesson lesson) {
+            final prerequisite = lessonsById[lesson.prerequisiteLessonId];
+            return effectiveCountry == 'EE' &&
+                prerequisite?.lessonKind == 'prelude' &&
+                !progress.contains(prerequisite!.id);
+          }
+
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+            children: [
               Text(
-                module.title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                data.course.description,
+                style: TextStyle(color: AppTheme.gray500, height: 1.45),
               ),
-              if (module.description.isNotEmpty) ...[
-                const SizedBox(height: 4),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  _CourseFact(
+                    Icons.layers_outlined,
+                    '${data.modules.length} modules',
+                  ),
+                  const SizedBox(width: 16),
+                  _CourseFact(
+                    Icons.menu_book_outlined,
+                    '${data.lessons.length} lessons',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              for (final module in data.modules) ...[
                 Text(
-                  module.description,
-                  style: TextStyle(color: AppTheme.gray500),
+                  module.title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
-              ],
-              const SizedBox(height: 10),
-              for (var index = 0; index < module.lessons.length; index++)
-                Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor:
-                          progress.contains(module.lessons[index].id)
-                          ? AppTheme.accent
-                          : AppTheme.tint,
-                      foregroundColor:
-                          progress.contains(module.lessons[index].id)
-                          ? Colors.white
-                          : AppTheme.accent,
-                      child: progress.contains(module.lessons[index].id)
-                          ? const Icon(Icons.check, size: 18)
-                          : Text('${index + 1}'),
-                    ),
-                    title: Text(module.lessons[index].title),
-                    subtitle: Text(_lessonSummary(module.lessons[index])),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => LessonScreen(
-                          course: course,
-                          lesson: module.lessons[index],
-                        ),
+                if (module.description.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    module.description,
+                    style: TextStyle(color: AppTheme.gray500),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                for (var index = 0; index < module.lessons.length; index++)
+                  Card(
+                    child: ListTile(
+                      enabled: !isLocked(module.lessons[index]),
+                      leading: CircleAvatar(
+                        backgroundColor:
+                            progress.contains(module.lessons[index].id)
+                            ? AppTheme.accent
+                            : AppTheme.tint,
+                        foregroundColor:
+                            progress.contains(module.lessons[index].id)
+                            ? Colors.white
+                            : AppTheme.accent,
+                        child: isLocked(module.lessons[index])
+                            ? const Icon(Icons.lock_outline, size: 18)
+                            : progress.contains(module.lessons[index].id)
+                            ? const Icon(Icons.check, size: 18)
+                            : Text('${index + 1}'),
                       ),
+                      title: Text(module.lessons[index].title),
+                      subtitle: Text(_lessonSummary(module.lessons[index])),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Tooltip(
+                            message: 'Classic mode',
+                            child: IconButton(
+                              icon: const Icon(Icons.menu_book_outlined),
+                              onPressed: isLocked(module.lessons[index])
+                                  ? null
+                                  : () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => LessonScreen(
+                                          course: data.course,
+                                          lesson: module.lessons[index],
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          Tooltip(
+                            message: 'Chat mode',
+                            child: IconButton(
+                              icon: const Icon(Icons.chat_bubble_outline),
+                              onPressed: isLocked(module.lessons[index])
+                                  ? null
+                                  : () => _openLessonChat(
+                                      module.lessons[index].id,
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      onTap: isLocked(module.lessons[index])
+                          ? null
+                          : () => _openLessonChat(module.lessons[index].id),
                     ),
                   ),
-                ),
-              const SizedBox(height: 18),
+                const SizedBox(height: 18),
+              ],
             ],
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -142,9 +196,22 @@ class LessonScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final completed =
         ref.watch(lessonProgressProvider).value?.contains(lesson.id) ?? false;
+    final mastered =
+        ref.watch(lessonMasteryProvider).value?.contains(lesson.id) ?? false;
+    final needsMastery = lesson.lessonKind == 'prelude';
+    final isEstonian = course.canonicalLanguage == 'et';
 
     return Scaffold(
-      appBar: AppBar(title: Text(lesson.title)),
+      appBar: AppBar(
+        title: Text(lesson.title),
+        actions: [
+          IconButton(
+            tooltip: isEstonian ? 'Ava vestlusrežiim' : 'Open chat mode',
+            onPressed: () => _openLessonChat(lesson.id),
+            icon: const Icon(Icons.chat_bubble_outline),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 110),
         children: [
@@ -164,6 +231,42 @@ class LessonScreen extends ConsumerWidget {
               const Text('  ·  '),
               Text('${lesson.xpReward} XP'),
             ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppTheme.tint,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.accent.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.menu_book_outlined, color: AppTheme.accent),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isEstonian ? 'Klassikaline režiim' : 'Classic mode',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        isEstonian
+                            ? 'Loe, uuri ja lahenda kordamistegevus.'
+                            : 'Read, explore, and complete the review activity.',
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => _openLessonChat(lesson.id),
+                  icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                  label: Text(isEstonian ? 'Vestlus' : 'Chat'),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 18),
           MarkdownBody(
@@ -204,17 +307,34 @@ class LessonScreen extends ConsumerWidget {
                 ),
           ),
           const SizedBox(height: 28),
-          _LessonActivitiesSection(lesson: lesson),
+          _LessonActivitiesSection(
+            lesson: lesson,
+            language: course.canonicalLanguage,
+            onMastered: () =>
+                ref.read(lessonMasteryProvider.notifier).mark(lesson.id),
+          ),
         ],
       ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(18, 8, 18, 12),
         child: FilledButton.icon(
-          onPressed: () =>
-              ref.read(lessonProgressProvider.notifier).toggle(lesson.id),
+          onPressed: needsMastery && !mastered
+              ? null
+              : () =>
+                    ref.read(lessonProgressProvider.notifier).toggle(lesson.id),
           icon: Icon(completed ? Icons.undo : Icons.check),
           label: Text(
-            completed ? 'Mark as not completed' : 'Mark lesson complete',
+            completed
+                ? isEstonian
+                      ? 'Märgi lõpetamata'
+                      : 'Mark as not completed'
+                : needsMastery && !mastered
+                ? isEstonian
+                      ? 'Lahenda tegevus, et tund lõpetada'
+                      : 'Pass the activity to complete'
+                : isEstonian
+                ? 'Märgi tund lõpetatuks'
+                : 'Mark lesson complete',
           ),
         ),
       ),
@@ -224,8 +344,14 @@ class LessonScreen extends ConsumerWidget {
 
 class _LessonActivitiesSection extends ConsumerWidget {
   final Lesson lesson;
+  final String language;
+  final VoidCallback onMastered;
 
-  const _LessonActivitiesSection({required this.lesson});
+  const _LessonActivitiesSection({
+    required this.lesson,
+    required this.language,
+    required this.onMastered,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -260,7 +386,7 @@ class _LessonActivitiesSection extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Explore and practise',
+              language == 'et' ? 'Uuri ja harjuta' : 'Explore and practise',
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
@@ -271,7 +397,11 @@ class _LessonActivitiesSection extends ConsumerWidget {
               const SizedBox(height: 12),
             ],
             for (final exercise in data.exercises) ...[
-              GuidedExerciseCard(exercise: exercise),
+              GuidedExerciseCard(
+                exercise: exercise,
+                language: language,
+                onMastered: onMastered,
+              ),
               const SizedBox(height: 12),
             ],
           ],
@@ -283,8 +413,15 @@ class _LessonActivitiesSection extends ConsumerWidget {
 
 class GuidedExerciseCard extends ConsumerStatefulWidget {
   final GuidedExercise exercise;
+  final String language;
+  final VoidCallback? onMastered;
 
-  const GuidedExerciseCard({super.key, required this.exercise});
+  const GuidedExerciseCard({
+    super.key,
+    required this.exercise,
+    this.language = 'en',
+    this.onMastered,
+  });
 
   @override
   ConsumerState<GuidedExerciseCard> createState() => _GuidedExerciseCardState();
@@ -295,6 +432,7 @@ class _GuidedExerciseCardState extends ConsumerState<GuidedExerciseCard> {
   bool _checking = false;
   String? _result;
   final _numberController = TextEditingController();
+  final _textController = TextEditingController();
   final _protonController = TextEditingController(text: '0');
   final _neutronController = TextEditingController(text: '0');
   final _electronController = TextEditingController(text: '0');
@@ -312,6 +450,7 @@ class _GuidedExerciseCardState extends ConsumerState<GuidedExerciseCard> {
   @override
   void dispose() {
     _numberController.dispose();
+    _textController.dispose();
     _protonController.dispose();
     _neutronController.dispose();
     _electronController.dispose();
@@ -340,9 +479,15 @@ class _GuidedExerciseCardState extends ConsumerState<GuidedExerciseCard> {
           ? null
           : {'protons': protons, 'neutrons': neutrons, 'electrons': electrons};
     }
-    if (exercise.exerciseType == 'mole_calculation') {
+    if (exercise.exerciseType == 'mole_calculation' ||
+        exercise.exerciseType == 'numeric_calculation') {
       final value = double.tryParse(_numberController.text);
       return value == null ? null : {'value': value};
+    }
+    if (exercise.exerciseType == 'formula_builder' ||
+        exercise.exerciseType == 'short_answer') {
+      final value = _textController.text.trim();
+      return value.isEmpty ? null : {'text': value};
     }
     return null;
   }
@@ -360,12 +505,20 @@ class _GuidedExerciseCardState extends ConsumerState<GuidedExerciseCard> {
     try {
       final verdict = await ref
           .read(learningServiceProvider)
-          .checkExercise(widget.exercise.id, answer);
+          .checkExercise(widget.exercise.id, answer, language: widget.language);
       if (mounted) {
+        if (verdict.correct) widget.onMastered?.call();
         setState(() {
-          _result = verdict.correct
+          final fallback = widget.language == 'et'
+              ? verdict.correct
+                    ? 'Õige — tubli töö.'
+                    : 'Veel mitte päris. Vaata õppetund uuesti üle ja proovi veel.'
+              : verdict.correct
               ? 'Correct — well done.'
               : 'Not quite. Re-read the lesson and try again.';
+          _result = verdict.explanation.isEmpty
+              ? fallback
+              : '${verdict.correct ? (widget.language == 'et' ? 'Õige.' : 'Correct.') : (widget.language == 'et' ? 'Veel mitte päris.' : 'Not quite.')} ${verdict.explanation}';
         });
       }
     } catch (_) {
@@ -419,7 +572,9 @@ class _GuidedExerciseCardState extends ConsumerState<GuidedExerciseCard> {
               Text(
                 _result!,
                 style: TextStyle(
-                  color: _result!.startsWith('Correct')
+                  color:
+                      _result!.startsWith('Correct') ||
+                          _result!.startsWith('Õige')
                       ? AppTheme.green600
                       : AppTheme.gray500,
                   fontWeight: FontWeight.w600,
@@ -443,16 +598,38 @@ class _GuidedExerciseCardState extends ConsumerState<GuidedExerciseCard> {
 
   Widget _answerFields(GuidedExercise exercise) {
     if (exercise.choices.isNotEmpty) {
-      return Wrap(
-        spacing: 8,
-        runSpacing: 8,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (var index = 0; index < exercise.choices.length; index++)
-            ChoiceChip(
-              label: Text(exercise.choices[index]),
-              selected: _choice == index,
-              onSelected: (_) => setState(() => _choice = index),
+          for (var index = 0; index < exercise.choices.length; index++) ...[
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                backgroundColor: _choice == index
+                    ? AppTheme.accent
+                    : Colors.white,
+                foregroundColor: _choice == index ? Colors.white : AppTheme.ink,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+              ),
+              onPressed: () => setState(() => _choice = index),
+              child: Row(
+                children: [
+                  Icon(
+                    _choice == index
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(exercise.choices[index])),
+                ],
+              ),
             ),
+            if (index < exercise.choices.length - 1) const SizedBox(height: 8),
+          ],
         ],
       );
     }
@@ -477,8 +654,11 @@ class _GuidedExerciseCardState extends ConsumerState<GuidedExerciseCard> {
               exercise.equation[index],
               style: const TextStyle(fontSize: 18),
             ),
-            if (index == 0) const Text('+', style: TextStyle(fontSize: 18)),
-            if (index == 1) const Text('→', style: TextStyle(fontSize: 18)),
+            if (index < exercise.operators.length)
+              Text(
+                exercise.operators[index],
+                style: const TextStyle(fontSize: 18),
+              ),
           ],
         ],
       );
@@ -507,6 +687,16 @@ class _GuidedExerciseCardState extends ConsumerState<GuidedExerciseCard> {
             ),
           ),
         ],
+      );
+    }
+    if (exercise.exerciseType == 'formula_builder' ||
+        exercise.exerciseType == 'short_answer') {
+      return TextField(
+        controller: _textController,
+        autocorrect: false,
+        decoration: InputDecoration(
+          labelText: exercise.ui['text_answer'] ?? 'Type your answer',
+        ),
       );
     }
     return _numberField(

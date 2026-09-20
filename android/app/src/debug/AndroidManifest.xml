@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Enables the ADB-reversed local HTTP proxy used only by emulator tests. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>

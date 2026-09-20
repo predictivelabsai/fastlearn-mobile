@@ -18,8 +18,9 @@ abstract class LearningService {
 
   Future<ExerciseCheckResult> checkExercise(
     int exerciseId,
-    Map<String, dynamic> answer,
-  );
+    Map<String, dynamic> answer, {
+    String? language,
+  });
 }
 
 class HttpLearningService implements LearningService {
@@ -56,7 +57,7 @@ class HttpLearningService implements LearningService {
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '/courses/$courseId/curriculum',
-      queryParameters: {'lang': language},
+      queryParameters: {if (language.isNotEmpty) 'lang': language},
     );
     return CourseCurriculum.fromJson(response.data!);
   }
@@ -68,7 +69,7 @@ class HttpLearningService implements LearningService {
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '/lessons/$lessonId/guided-content',
-      queryParameters: {'lang': language},
+      queryParameters: {if (language.isNotEmpty) 'lang': language},
     );
     return LessonActivities.fromJson(response.data!);
   }
@@ -76,10 +77,12 @@ class HttpLearningService implements LearningService {
   @override
   Future<ExerciseCheckResult> checkExercise(
     int exerciseId,
-    Map<String, dynamic> answer,
-  ) async {
+    Map<String, dynamic> answer, {
+    String? language,
+  }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/exercises/$exerciseId/check',
+      queryParameters: {if (language?.isNotEmpty == true) 'lang': language},
       data: {'answer': answer},
     );
     return ExerciseCheckResult.fromJson(response.data!);

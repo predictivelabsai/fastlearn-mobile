@@ -12,6 +12,10 @@ void main() {
         'description': 'Learn mathematics',
         'category': 'Mathematics',
         'difficulty': 'beginner',
+        'country_code': 'EE',
+        'grade_code': '8',
+        'curriculum_code': 'EE-PROK-2026-CHEM-G8',
+        'canonical_language': 'et',
       },
       'modules': [
         {
@@ -35,6 +39,9 @@ void main() {
     });
 
     expect(curriculum.course.title, 'Mathematics');
+    expect(curriculum.course.countryCode, 'EE');
+    expect(curriculum.course.gradeCode, '8');
+    expect(curriculum.course.canonicalLanguage, 'et');
     expect(curriculum.modules.single.title, 'Algebra');
     expect(curriculum.lessons.single.title, 'Variables');
     expect(curriculum.lessons.single.exerciseCount, 2);
@@ -52,6 +59,7 @@ void main() {
             'prompt': 'Balance water.',
             'difficulty_band': 2,
             'equation': ['H₂', 'O₂', 'H₂O'],
+            'operators': ['+', '→'],
             'ui': {'check': 'Check equation'},
           },
         ],
@@ -80,6 +88,7 @@ void main() {
 
       expect(activities.exercises.single.engine, 'chemistry');
       expect(activities.exercises.single.equation, ['H₂', 'O₂', 'H₂O']);
+      expect(activities.exercises.single.operators, ['+', '→']);
       expect(activities.visualizations.single.data.single['type'], 'bar');
       expect(activities.visualizations.single.table['columns'], [
         'Particle',
@@ -87,4 +96,18 @@ void main() {
       ]);
     },
   );
+
+  test('exercise verdict parses localized explanatory feedback', () {
+    final verdict = ExerciseCheckResult.fromJson({
+      'correct': true,
+      'completed': true,
+      'optimal': true,
+      'correct_answer': 'Aine on materjali koostisosa.',
+      'explanation': 'Õige vastus seostub õpitulemusega PRE-01.',
+    });
+
+    expect(verdict.correct, isTrue);
+    expect(verdict.correctAnswer, isNotEmpty);
+    expect(verdict.explanation, startsWith('Õige vastus'));
+  });
 }
